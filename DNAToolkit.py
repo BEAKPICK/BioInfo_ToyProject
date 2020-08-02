@@ -77,3 +77,41 @@ def gen_reading_frames(seq):
     frames.append(translate_seq(reverse_complement(seq), 1))
     frames.append(translate_seq(reverse_complement(seq), 2))
     return frames
+
+def proteins_from_rf(aa_seq):
+    """Compute all possible proteins in an aminoacid seq and return a list of possible proteins"""
+    current_prot = []
+    proteins = []
+    for aa in aa_seq:
+        if aa == "_":
+            # STOP accumulating amino acids if _ - STOP was found
+            if current_prot:
+                for p in current_prot:
+                    proteins.append(p)
+                current_prot = []
+        else:
+            # START accumulating amino acids if M - START was found
+            if aa == "M":
+                current_prot.append("")
+            for i in range(len(current_prot)):
+                current_prot[i] += aa
+    return proteins
+
+def all_proteins_from_orfs(seq, startReadPos=0, endReadPos=0, ordered=False):
+    """Compute all possible proteins for all open reading frames"""
+    """Protine Search DB: https://www.ncbi.nlm.nih.gov/nuccore/NM_001185097.2"""
+    """API can be used to pull protein info"""
+    if endReadPos > startReadPos:
+        rfs = gen_reading_frames(seq[startReadPos: endReadPos])
+    else:
+        rfs = gen_reading_frames(seq)
+
+    res = []
+    for rf in rfs:
+        prots = proteins_from_rf(rf)
+        for p in prots:
+            res.append(p)
+
+    if ordered:
+        return sorted(res, key=len, reverse=True)
+    return res
